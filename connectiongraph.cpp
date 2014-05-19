@@ -2,13 +2,14 @@
 
 using namespace dps;
 
-void ConnectionGraph::sort_graph()
+ConnectionGraph::ConnectionGraph(): next_chain_index_(1)
 {
-
 }
 
-ConnectionGraph::ConnectionGraph()
+ConnectionGraph::~ConnectionGraph()
 {
+    param_graph_.clear();
+    params_.clear();
 }
 
 void ConnectionGraph::eval(const std::unordered_map<param_index_t, ParamValue> &param_val, std::unordered_set<subscriber_index_t> &subscribers)
@@ -16,7 +17,7 @@ void ConnectionGraph::eval(const std::unordered_map<param_index_t, ParamValue> &
     std::unordered_map<param_index_t, bool> eval_result;
     std::unordered_set<chain_index_t> excluded_chains;
     // first pass: find available chains
-    for (auto &tier: param_graph_){
+    for (auto tier: param_graph_){
         for (auto &param: tier) {
             if (eval_result.find(param->id()) != eval_result.end()){
                 // don't eval this node again
@@ -33,7 +34,7 @@ void ConnectionGraph::eval(const std::unordered_map<param_index_t, ParamValue> &
             //eval node
             // FIXME: Dangerous code!
             if (param->type()==typeid(int)){
-                const ParamNodeImpl<int64_t> *int_node = dynamic_cast<const ParamNodeImpl<int64_t>*>(param);
+                const auto int_node = std::dynamic_pointer_cast<ParamNodeImpl<int64_t>>(param);
                 auto v = param_val.find(param->id());
                 int64_t *val = nullptr;
                 if (v != param_val.end()){
@@ -41,7 +42,7 @@ void ConnectionGraph::eval(const std::unordered_map<param_index_t, ParamValue> &
                 }
                 int_node->eval(val, excluded_chains);
             } else if (param->type()==typeid(std::string)){
-                const ParamNodeImpl<char*> *string_node = dynamic_cast<const ParamNodeImpl<char*>*>(param);
+                const auto string_node = std::dynamic_pointer_cast<ParamNodeImpl<char*>>(param);
                 char *val = nullptr;
                 auto v = param_val.find(param->id());
                 if (v != param_val.end()){
@@ -70,23 +71,28 @@ void ConnectionGraph::eval(const std::unordered_map<param_index_t, ParamValue> &
     }
 }
 
-chain_index_t ConnectionGraph::add_connection(const std::unordered_map<param_index_t, std::pair<Operation, ParamValue> > &chain)
+void ConnectionGraph::sort_graph()
 {
-    for (auto param: chain){
-        if (params_.find(param.first) == params_.end()){
-            // create new parameter
-            params_[param.first]=ParamNodeImpl<>(param.first);
+    param_graph_.clear();    
+    std::multimap<int32_t, std::shared_ptr<dps::ParamNode>> weight_map;
+    for (auto param_record: params_){
+        weight_map.emplace(param_record.second->chains().size(), param_record.second);
+    }
+    for (auto weight_record: weight_map){
+        auto range = weight_map.equal_range(weight_record.first);
+        std::vector<std::shared_ptr<dps::ParamNode>> tier;
+        for (auto it=range.first; it != range.second; it++){
+            tier.push_back(it->second);
         }
-        auto &param_node = params_[param.first];
-
+        param_graph_.push_back(tier);
     }
 }
 
 void ConnectionGraph::remove_connection(chain_index_t chain)
 {
     for (auto param: params_){
-        param.second.remove_chain(chain);
-        if (param.second.chains().size() == 0){
+        param.second->remove_chain(chain);
+        if (param.second->chains().size() == 0){
             params_.erase(param.first);
         }
     }

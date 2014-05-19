@@ -22,25 +22,25 @@ namespace dps {
         std::function<bool(const int64_t&, const int64_t&)> comparator;
         switch (op){
         case Operation::Eq:
-            comparator = [](const int64_t a, const int64_t b)->bool {return a == b;};
+            comparator = [](const int64_t a, const int64_t b){return a == b;};
             break;
         case Operation::Neq:
-            comparator = [](const int64_t a, const int64_t b)->bool {return a != b;};
+            comparator = [](const int64_t a, const int64_t b){return a != b;};
             break;
         case Operation::Lt:
-            comparator = [](const int64_t a, const int64_t b)->bool {return a < b;};
+            comparator = [](const int64_t a, const int64_t b){return a < b;};
             break;
         case Operation::Gt:
-            comparator = [](const int64_t a, const int64_t b)->bool {return a > b;};
+            comparator = [](const int64_t a, const int64_t b){return a > b;};
             break;
         case Operation::Lte:
-            comparator = [](const int64_t a, const int64_t b)->bool {return a <= b;};
+            comparator = [](const int64_t a, const int64_t b){return a <= b;};
             break;
         case Operation::Gte:
-            comparator = [](const int64_t a, const int64_t b)->bool {return a >= b;};
+            comparator = [](const int64_t a, const int64_t b){return a >= b;};
             break;
         default:
-            comparator = [](const int64_t , const int64_t )->bool {return false;};
+            comparator = [](const int64_t , const int64_t ){return false;};
             break;
         }
         return comparator;
@@ -51,10 +51,10 @@ namespace dps {
         std::function<bool(const cstr, const cstr)> comparator;
         switch (op){
         case Operation::Contains:
-            comparator = [](const cstr a, const cstr b)->bool {return std::string(a).find(b)!=std::string(a).npos;};
+            comparator = [](const cstr a, const cstr b){return std::string(a).find(b)!=std::string(a).npos;};
             break;
         default:
-            comparator = [](const cstr , const cstr )->bool {return false;};
+            comparator = [](const cstr , const cstr ){return false;};
         }
         return comparator;
     }
@@ -64,9 +64,9 @@ namespace dps {
         for (auto op: op_nodes){
             auto comparator=std::move(get_comparator(op.first));
             if (op.first==Operation::Exists){
-                comparator=[](const T, const T)->bool {return true;};
+                comparator=[](const T, const T){return true;};
             } else if (value==nullptr){
-                comparator=[](const T, const T)->bool {return false;};
+                comparator=[](const T, const T){return false;};
             }
             bool skip_next=false;
             for (auto &val: op.second.val_nodes){
@@ -90,6 +90,25 @@ namespace dps {
                 }
             }
         }
+    }
+
+    template <typename T>
+    void ParamNodeImpl<T>::add_condition(chain_index_t chain, Operation op, const T val){
+        auto op_record = op_nodes.find(op);
+        if (op_record==op_nodes.end()){
+            auto res = op_nodes.emplace(op, OperationNode<T>());
+            op_record = res.first;
+            op_record.op = op;
+        }
+        for (auto val_node: op_record.val_nodes){
+            if (val_node.value == val){
+                val_node.chains.insert(chain);
+                return;
+            }
+        }
+        ValueNode<T> val_node = {val, {chain}};
+        op_record.val_nodes.insert(val_node);
+        std::sort(op_record.val_nodes.begin(), op_record.val_nodes.end(), [](T a, T b){return a < b;});
     }
 }
 #endif // CONNECTIONGRAPH_TPL_HPP

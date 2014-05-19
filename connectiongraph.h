@@ -7,7 +7,10 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <set>
+#include <map>
 #include <functional>
+#include <memory>
+#include <algorithm>
 
 namespace dps {
     using param_index_t = uint8_t;
@@ -42,7 +45,7 @@ namespace dps {
         int64_t     integer_;
         double      double_;
         cstr        string_;
-        bool        raw_exists_;
+        bool        raw_exists_;        
     };
 
     template <typename T>
@@ -61,16 +64,15 @@ namespace dps {
         param_index_t   id_;
         // TODO: Find better solution
         std::type_index type_;
-        std::unordered_set<chain_index_t> chains_;
-        chain_index_t next_chain_index_;
+        std::unordered_set<chain_index_t> chains_;        
     public:
         ParamNode() = delete;
         virtual ~ParamNode(){}
-        ParamNode(param_index_t id, std::type_index type): id_(id), type_(type), next_chain_index_(1){}
+        ParamNode(param_index_t id, std::type_index type): id_(id), type_(type){}
         inline bool id() const {return id_;}
         inline std::type_index type() const {return type_;}
         inline std::unordered_set<chain_index_t> chains() const {return chains_;}
-        inline chain_index_t add_chain(){chains_.insert(next_chain_index_);return next_chain_index_++;}
+        inline void add_chain(chain_index_t chain){chains_.insert(chain);}
         inline void remove_chain(chain_index_t chain){chains_.erase(chain);}
     };
 
@@ -82,6 +84,7 @@ namespace dps {
         ParamNodeImpl() = delete;
         ParamNodeImpl(param_index_t id): ParamNode(id, typeid(T)){}
         std::unordered_set<Operation> operation_set() const;
+        void add_condition(chain_index_t chain, Operation op, const T val);
 
         // should use dynamic_cast:(
         void eval(const T *value, std::unordered_set<chain_index_t> &excluded_chains) const;
@@ -91,15 +94,31 @@ namespace dps {
 namespace dps {
     class ConnectionGraph
     {
-        std::unordered_map<param_index_t, dps::ParamNode> params_;
-        std::vector<std::vector<const dps::ParamNode*>> param_graph_;   //tiers of same weight nodes
+        std::unordered_map<param_index_t, std::shared_ptr<dps::ParamNode>> params_;
+        std::vector<std::vector<std::shared_ptr<dps::ParamNode>>> param_graph_;   //tiers of same weight nodes
         std::unordered_map<chain_index_t, std::unordered_set<subscriber_index_t>> subscriber_map;
+        chain_index_t next_chain_index_;
 
         void sort_graph();
     public:
         ConnectionGraph();
+        ~ConnectionGraph();
         void eval(const std::unordered_map<dps::param_index_t, dps::ParamValue> &param_val, std::unordered_set<dps::subscriber_index_t> &subscribers);
-        chain_index_t add_connection(const std::unordered_map<dps::param_index_t, std::pair<dps::Operation, dps::ParamValue>> &chain);
+
+        template<typename T>
+        chain_index_t add_connection(const std::unordered_map<dps::param_index_t, std::pair<dps::Operation, T>> &chain){
+            for (auto param: chain){
+                if (params_.find(param.first) == params_.end()){
+                    // create new parameter
+                    params_.emplace(param.first, std::make_shared<ParamNodeImpl<T>>(new ParamNodeImpl<T>(param.first)));
+                }
+                auto &param_node = params_.at(param.first);
+                param_node->add_condition(next_chain_index_, param.second.first, param.second.second);
+            }
+            sort_graph();
+            return next_chain_index_++;
+        }
+
         void remove_connection(chain_index_t);
     };
 }

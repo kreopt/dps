@@ -58,5 +58,50 @@ namespace dps {
     void ParamNodeImpl<T>::remove_condition(chain_index_t chain){
         //TODO: implement
     }
+
+    template<typename T>
+    void ConnectionGraph::eval(const param_list_t<T> &param_val, std::unordered_set<subscriber_index_t> &subscribers)
+    {
+        std::unordered_map<param_index_t, bool> eval_result;
+        std::unordered_set<chain_index_t> excluded_chains;
+        // first pass: find available chains
+        for (auto tier: param_graph_){
+            for (auto &param: tier) {
+                if (eval_result.find(param->id()) != eval_result.end()){
+                    // don't eval this node again
+                    continue;
+                }
+                if (param_val.find(param->id()) == param_val.end()){
+                    // mark as excluded cause parameter was not passed
+                    eval_result[param->id()] = false;
+                    for (auto chain: param->chains()){
+                        excluded_chains.insert(chain);
+                    }
+                    continue;
+                }
+                //eval node
+                const auto node = std::dynamic_pointer_cast<ParamNodeImpl<T>>(param);
+                auto v = param_val.find(param->id());
+                node->eval(((v!=param_val.end()) ? &v->second : nullptr), excluded_chains);
+                eval_result[param->id()] = true;
+            }
+        }
+        // second pass: find subscribers
+        std::unordered_set<chain_index_t> all_chains;
+        for (const auto &tier: param_graph_){
+            for (auto &param: tier) {
+                all_chains.insert(param->chains().begin(), param->chains().end());
+            }
+        }
+        for (const auto &chain: all_chains){
+            if (excluded_chains.find(chain)!=excluded_chains.end()){
+                continue;
+            }
+            auto chain_subscribers = subscriber_map.find(chain);
+            if (chain_subscribers!=subscriber_map.end()){
+                subscribers.insert(chain_subscribers->second.begin(), chain_subscribers->second.end());
+            }
+        }
+    }
 }
 #endif // CONNECTIONGRAPH_TPL_HPP

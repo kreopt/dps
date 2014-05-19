@@ -16,7 +16,7 @@ namespace dps {
     using param_index_t = uint8_t;
     using chain_index_t = uint32_t;
     using subscriber_index_t = uint32_t;
-    using cstr = char*;
+    using string_t = std::string;
 
     enum class Operation {
         Lt,
@@ -28,6 +28,21 @@ namespace dps {
         Contains,
         Exists
     };
+    // TODO: variant type
+    union ParamValue{
+        int64_t     integer_;
+        double      double_;
+        string_t        string_;
+        bool        raw_exists_;
+    };
+
+
+    template<typename T>
+    using connection_t = std::unordered_map<dps::param_index_t,std::pair<dps::Operation,T>>;
+    template<typename T>
+    using connection_list_t = std::vector<connection_t<T>>;
+    template<typename T>
+    using param_list_t = std::unordered_map<dps::param_index_t, T>;
 }
 namespace std {
     template <>
@@ -40,13 +55,6 @@ namespace std {
         };
 }
 namespace dps {
-
-    union ParamValue{
-        int64_t     integer_;
-        double      double_;
-        cstr        string_;
-        bool        raw_exists_;        
-    };
 
     template <typename T>
     struct ValueNode {
@@ -97,7 +105,6 @@ namespace dps {
         void eval(const T *value, std::unordered_set<chain_index_t> &excluded_chains) const;
     };
 }
-#include "connectiongraph.tpl.hpp"
 #if TEST_ENV
     class ConnectionGraphTest;
 #endif
@@ -118,11 +125,13 @@ namespace dps {
         ConnectionGraph();
         ~ConnectionGraph();
 
+        template<typename T>
+        void eval(const param_list_t<T> &param_val, std::unordered_set<dps::subscriber_index_t> &subscribers);
 
-        void eval(const std::unordered_map<dps::param_index_t, dps::ParamValue> &param_val, std::unordered_set<dps::subscriber_index_t> &subscribers);
+        // TODO: add connection for existing chain
 
         template<typename T>
-        chain_index_t add_connection(const std::unordered_map<dps::param_index_t, std::pair<dps::Operation, T>> &chain){
+        chain_index_t add_connection(const connection_t<T> &chain, subscriber_index_t subscriber_id){
             for (auto param: chain){
                 auto param_node = params_.find(param.first);
                 if (param_node == params_.end()){
@@ -134,13 +143,14 @@ namespace dps {
                 std::dynamic_pointer_cast<ParamNodeImpl<T>>(param_node->second)->add_condition(next_chain_index_, param.second.first, param.second.second);
             }
             sort_graph();
+            subscriber_map[next_chain_index_].insert(subscriber_id);
             return next_chain_index_++;
         }
 
         void remove_connection(chain_index_t);
     };
 }
-
+#include "connectiongraph.tpl.hpp"
 
 
 #endif // CONNECTIONGRAPH_H

@@ -37,6 +37,7 @@ namespace dps {
 
     template <typename T>
     void ParamNodeImpl<T>::add_condition(chain_index_t chain, Operation op, const T val){
+        add_chain(chain);
         auto op_record = op_nodes.find(op);
         if (op_record==op_nodes.end()){
             auto res = op_nodes.emplace(op, OperationNode<T>());
@@ -51,7 +52,6 @@ namespace dps {
         }
         ValueNode<T> val_node = {val, {chain}};
         op_record->second.val_nodes.insert(val_node);
-        std::sort(op_record->second.val_nodes.begin(), op_record->second.val_nodes.end(), [](T a, T b){return a < b;});
     }
 
     template <typename T>

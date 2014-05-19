@@ -1,5 +1,5 @@
 #include "connectiongraph.h"
-
+#include <iostream>
 using namespace dps;
 
 template<>
@@ -135,13 +135,13 @@ void ConnectionGraph::sort_graph()
     for (auto param_record: params_){
         weight_map.emplace(param_record.second->chains().size(), param_record.second);
     }
-    for (auto weight_record: weight_map){
-        auto range = weight_map.equal_range(weight_record.first);
+    for(auto it = weight_map.begin(), end = weight_map.end(); it != end; it = weight_map.upper_bound(it->first)) {
+        auto range = weight_map.equal_range(it->first);
         std::vector<std::shared_ptr<dps::ParamNode>> tier;
         for (auto it=range.first; it != range.second; it++){
             tier.push_back(it->second);
         }
-        param_graph_.push_back(tier);
+        param_graph_.insert(param_graph_.begin(), tier);
     }
 }
 

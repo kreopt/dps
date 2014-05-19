@@ -34,15 +34,34 @@ public:
 
     void test_add_connection(){
         // check if we have no parameters
-        CPPUNIT_ASSERT_MESSAGE("Connection graph is not empty before insertion",cg->params_.size()==0);
-        CPPUNIT_ASSERT_MESSAGE("Connection graph is not empty before insertion",cg->param_graph_.size()==0);
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Connection param set is not empty before insertion",0ul,cg->params_.size());
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Connection tier graph is not empty before insertion",0ul,cg->param_graph_.size());
         // insert some conditions
-        cg->add_connection<int64_t>({
+        dps::chain_index_t c1 = cg->add_connection<int64_t>({
                                {1,{dps::Operation::Lt, 200}},
                                {2,{dps::Operation::Lt, 300}}
                            });
         // check if all inserted parameters exists
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Invalid amount of parameters in result param set",2ul, cg->params_.size());
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Invalid chain size (1)", 1ul, cg->params_.at(1)->chains().size());
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Invalid chain size (2)", 1ul, cg->params_.at(2)->chains().size());
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Invalid amount of parameters in result tier graph",1ul, cg->param_graph_.size());
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Wrong chain id returned", 1u, *cg->params_.at(1)->chains().begin());
+
+        dps::chain_index_t c2 = cg->add_connection<int64_t>({
+                               {1,{dps::Operation::Lt, 100}},
+                               {1,{dps::Operation::Lt, 300}},
+                               {1,{dps::Operation::Gt, 100}}
+                           });
+
+        CPPUNIT_ASSERT_MESSAGE("Chain identifiers are equal", c1!=c2);
+
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Invalid amount of parameters in result param set (2)",2ul, cg->params_.size());
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Invalid chain size (1) (2)", 2ul, cg->params_.at(1)->chains().size());
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Invalid chain size (2) (2)", 1ul, cg->params_.at(2)->chains().size());
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Invalid amount of parameters in result tier graph (2)",2ul, cg->param_graph_.size());
         // check tiers are correctly sorted
+        CPPUNIT_ASSERT_EQUAL_MESSAGE("Invalid tier sorting", (int)1, (int)cg->param_graph_.at(0).at(0)->id());
     }
 
     void test_remove_connection(){

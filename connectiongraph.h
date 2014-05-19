@@ -55,9 +55,15 @@ namespace dps {
     };
 
     template <typename T>
+    inline bool value_node_compare(ValueNode<T> a, ValueNode<T> b){
+        return a.value < b.value;
+    }
+
+    template <typename T>
     struct OperationNode {
+        OperationNode():val_nodes(value_node_compare<T>){}
         Operation op;
-        std::set<ValueNode<T>> val_nodes;    //should be sorted!
+        std::set<ValueNode<T>,bool(*)(ValueNode<T>, ValueNode<T>)> val_nodes;    //should be sorted!
     };
 
     class ParamNode {
@@ -69,7 +75,7 @@ namespace dps {
         ParamNode() = delete;
         virtual ~ParamNode(){}
         ParamNode(param_index_t id, std::type_index type): id_(id), type_(type){}
-        inline bool id() const {return id_;}
+        inline param_index_t id() const {return id_;}
         inline std::type_index type() const {return type_;}
         inline std::unordered_set<chain_index_t> chains() const {return chains_;}
         inline void add_chain(chain_index_t chain){chains_.insert(chain);}

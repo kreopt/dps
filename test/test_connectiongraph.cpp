@@ -88,6 +88,12 @@ public:
     }
 
     void test_eval_node(){
+        /*dps::connection_list_t<dps::string_t> s_connection_list={
+            {
+                {6,{dps::Operation::Eq, 10}},
+                {7,{dps::Operation::Contains, "test"}}
+            }
+        };*/
         dps::connection_list_t<int64_t> connection_list={
             {
                 {1,{dps::Operation::Eq, 10}},
@@ -117,10 +123,13 @@ public:
             }
         };
         int i=0;
+        std::vector<dps::chain_index_t> chains;
         for (auto conn: connection_list){
-            cg->add_connection(conn, i);
+            chains.push_back(cg->add_connection(conn, i));
             i++;
         }
+        dps::connection_t<dps::string_t> p = {{7,{dps::Operation::Contains, "test"}}};
+        cg->add_connection(p, 0, chains.at(0));
 
         std::unordered_set<dps::subscriber_index_t> subscribers;
         dps::param_list_t<int64_t> param_list={

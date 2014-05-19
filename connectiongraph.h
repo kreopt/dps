@@ -32,7 +32,7 @@ namespace dps {
     union ParamValue{
         int64_t     integer_;
         double      double_;
-        string_t        string_;
+        string_t    string_;
         bool        raw_exists_;
     };
 
@@ -128,21 +128,7 @@ namespace dps {
         // TODO: add connection for existing chain
 
         template<typename T>
-        chain_index_t add_connection(const connection_t<T> &chain, subscriber_index_t subscriber_id){
-            for (auto param: chain){
-                auto param_node = params_.find(param.first);
-                if (param_node == params_.end()){
-                    // create new parameter
-                    std::shared_ptr<ParamNodeImpl<T>> p = std::shared_ptr<ParamNodeImpl<T>>(new ParamNodeImpl<T>(param.first));
-                    auto res = params_.emplace(param.first, p);
-                    param_node = res.first;
-                }
-                std::dynamic_pointer_cast<ParamNodeImpl<T>>(param_node->second)->add_condition(next_chain_index_, param.second.first, param.second.second);
-            }
-            sort_graph();
-            subscriber_map[next_chain_index_].insert(subscriber_id);
-            return next_chain_index_++;
-        }
+        chain_index_t add_connection(const connection_t<T> &chain, subscriber_index_t subscriber_id, chain_index_t chain_id = 0);
 
         void remove_connection(chain_index_t);
     };

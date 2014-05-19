@@ -103,5 +103,27 @@ namespace dps {
             }
         }
     }
+
+    template<typename T>
+    chain_index_t ConnectionGraph::add_connection(const connection_t<T> &chain, subscriber_index_t subscriber_id, chain_index_t chain_id){
+        chain_index_t chain_index = chain_id;
+        if (chain_index == 0){
+            chain_index=next_chain_index_;
+            next_chain_index_++;
+        }
+        for (auto param: chain){
+            auto param_node = params_.find(param.first);
+            if (param_node == params_.end()){
+                // create new parameter
+                std::shared_ptr<ParamNodeImpl<T>> p = std::shared_ptr<ParamNodeImpl<T>>(new ParamNodeImpl<T>(param.first));
+                auto res = params_.emplace(param.first, p);
+                param_node = res.first;
+            }
+            std::dynamic_pointer_cast<ParamNodeImpl<T>>(param_node->second)->add_condition(chain_index, param.second.first, param.second.second);
+        }
+        sort_graph();
+        subscriber_map[chain_index].insert(subscriber_id);
+        return chain_index;
+    }
 }
 #endif // CONNECTIONGRAPH_TPL_HPP

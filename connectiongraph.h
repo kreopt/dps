@@ -71,20 +71,17 @@ namespace dps {
     struct OperationNode {
         OperationNode():val_nodes(value_node_compare<T>){}
         Operation op;
-        std::set<ValueNode<T>,bool(*)(ValueNode<T>, ValueNode<T>)> val_nodes;    //should be sorted!
+        std::set<ValueNode<T>,bool(*)(ValueNode<T>, ValueNode<T>)> val_nodes;
     };
 
     class ParamNode {
         param_index_t   id_;
-        // TODO: Find better solution
-        std::type_index type_;
         std::unordered_set<chain_index_t> chains_;        
     public:
         ParamNode() = delete;
         virtual ~ParamNode(){}
-        ParamNode(param_index_t id, std::type_index type): id_(id), type_(type){}
+        ParamNode(param_index_t id): id_(id){}
         inline param_index_t id() const {return id_;}
-        inline std::type_index type() const {return type_;}
         inline std::unordered_set<chain_index_t> chains() const {return chains_;}
         inline void add_chain(chain_index_t chain){chains_.insert(chain);}
         inline void remove_chain(chain_index_t chain){chains_.erase(chain);}
@@ -96,7 +93,7 @@ namespace dps {
         std::function<bool(const T, const T)> get_comparator(Operation op) const;
     public:
         ParamNodeImpl() = delete;
-        ParamNodeImpl(param_index_t id): ParamNode(id, typeid(T)){}
+        ParamNodeImpl(param_index_t id): ParamNode(id){}
         std::unordered_set<Operation> operation_set() const;
         void add_condition(chain_index_t chain, Operation op, const T val);
         void remove_condition(chain_index_t chain);

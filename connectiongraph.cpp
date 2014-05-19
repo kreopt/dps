@@ -2,6 +2,63 @@
 
 using namespace dps;
 
+template<>
+inline std::unordered_set<Operation> ParamNodeImpl<void*>::operation_set() const {
+    return {Operation::Exists};
+}
+
+template<>
+inline std::unordered_set<Operation> ParamNodeImpl<char*>::operation_set() const {
+    return {Operation::Contains};
+}
+
+template<>
+inline std::unordered_set<Operation> ParamNodeImpl<int64_t>::operation_set() const{
+    return {Operation::Eq, Operation::Neq, Operation::Lt, Operation::Gt, Operation::Lte, Operation::Gte};
+}
+
+template<>
+std::function<bool(const int64_t, const int64_t)> ParamNodeImpl<int64_t>::get_comparator(Operation op) const{
+    std::function<bool(const int64_t&, const int64_t&)> comparator;
+    switch (op){
+    case Operation::Eq:
+        comparator = [](const int64_t a, const int64_t b){return a == b;};
+        break;
+    case Operation::Neq:
+        comparator = [](const int64_t a, const int64_t b){return a != b;};
+        break;
+    case Operation::Lt:
+        comparator = [](const int64_t a, const int64_t b){return a < b;};
+        break;
+    case Operation::Gt:
+        comparator = [](const int64_t a, const int64_t b){return a > b;};
+        break;
+    case Operation::Lte:
+        comparator = [](const int64_t a, const int64_t b){return a <= b;};
+        break;
+    case Operation::Gte:
+        comparator = [](const int64_t a, const int64_t b){return a >= b;};
+        break;
+    default:
+        comparator = [](const int64_t , const int64_t ){return false;};
+        break;
+    }
+    return comparator;
+}
+
+template<>
+std::function<bool(const cstr, const cstr)> ParamNodeImpl<cstr>::get_comparator(Operation op) const{
+    std::function<bool(const cstr, const cstr)> comparator;
+    switch (op){
+    case Operation::Contains:
+        comparator = [](const cstr a, const cstr b){return std::string(a).find(b)!=std::string(a).npos;};
+        break;
+    default:
+        comparator = [](const cstr , const cstr ){return false;};
+    }
+    return comparator;
+}
+
 ConnectionGraph::ConnectionGraph(): next_chain_index_(1)
 {
 }

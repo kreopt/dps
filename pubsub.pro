@@ -5,7 +5,10 @@ CONFIG -= app_bundle
 QT += core
 #LIBS += -lsqlite3x
 DEFINES += UNIX
-SOURCES += main.cpp \
+debug,release {
+    SOURCES += main.cpp
+}
+SOURCES +=  connectiongraph.cpp \
     #matcher.cpp \
     #subscription.cpp \
     #lpc.cpp \
@@ -16,7 +19,7 @@ SOURCES += main.cpp \
     #iconfig.cpp \
     #registry.cpp \
     #dps.cpp \
-    connectiongraph.cpp
+    test/test_connectiongraph.cpp
 
 HEADERS += \
     #matcher.h \
@@ -33,3 +36,8 @@ HEADERS += \
     connectiongraph.h \
     connectiongraph.tpl.hpp
 
+test{
+    SOURCES += test/main.cpp
+    DEFINES+=TEST_ENV=1
+    LIBS+=-lcppunit
+}

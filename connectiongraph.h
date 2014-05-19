@@ -85,15 +85,23 @@ namespace dps {
         ParamNodeImpl(param_index_t id): ParamNode(id, typeid(T)){}
         std::unordered_set<Operation> operation_set() const;
         void add_condition(chain_index_t chain, Operation op, const T val);
+        void remove_condition(chain_index_t chain);
 
         // should use dynamic_cast:(
         void eval(const T *value, std::unordered_set<chain_index_t> &excluded_chains) const;
     };
 }
 #include "connectiongraph.tpl.hpp"
+#if TEST_ENV
+    class ConnectionGraphTest;
+#endif
 namespace dps {
     class ConnectionGraph
     {
+        #if TEST_ENV
+        friend class ::ConnectionGraphTest;
+        #endif
+
         std::unordered_map<param_index_t, std::shared_ptr<dps::ParamNode>> params_;
         std::vector<std::vector<std::shared_ptr<dps::ParamNode>>> param_graph_;   //tiers of same weight nodes
         std::unordered_map<chain_index_t, std::unordered_set<subscriber_index_t>> subscriber_map;
@@ -103,17 +111,21 @@ namespace dps {
     public:
         ConnectionGraph();
         ~ConnectionGraph();
+
+
         void eval(const std::unordered_map<dps::param_index_t, dps::ParamValue> &param_val, std::unordered_set<dps::subscriber_index_t> &subscribers);
 
         template<typename T>
         chain_index_t add_connection(const std::unordered_map<dps::param_index_t, std::pair<dps::Operation, T>> &chain){
             for (auto param: chain){
-                if (params_.find(param.first) == params_.end()){
+                auto param_node = params_.find(param.first);
+                if (param_node == params_.end()){
                     // create new parameter
-                    params_.emplace(param.first, std::make_shared<ParamNodeImpl<T>>(new ParamNodeImpl<T>(param.first)));
+                    std::shared_ptr<ParamNodeImpl<T>> p = std::shared_ptr<ParamNodeImpl<T>>(new ParamNodeImpl<T>(param.first));
+                    auto res = params_.emplace(param.first, p);
+                    param_node = res.first;
                 }
-                auto &param_node = params_.at(param.first);
-                param_node->add_condition(next_chain_index_, param.second.first, param.second.second);
+                std::dynamic_pointer_cast<ParamNodeImpl<T>>(param_node->second)->add_condition(next_chain_index_, param.second.first, param.second.second);
             }
             sort_graph();
             return next_chain_index_++;

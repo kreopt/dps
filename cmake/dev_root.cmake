@@ -1,0 +1,6 @@
+if("$ENV{DEV_ROOT}" STREQUAL "")
+    message(FATAL_ERROR "No development root found! Set up DEV_ROOT environment variable")
+endif()
+set (CMAKE_INSTALL_PREFIX "$ENV{DEV_ROOT}")
+include_directories( $ENV{DEV_ROOT}/include )
+link_directories( $ENV{DEV_ROOT}/lib )

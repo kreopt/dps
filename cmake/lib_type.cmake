@@ -1,0 +1,6 @@
+if(("${LIBTYPE}" STREQUAL "STATIC") OR ("${LIBTYPE}" STREQUAL "SHARED"))
+    message( STATUS "Library will be built ${LIBTYPE}" )
+else()
+    message( STATUS "Library will be built shared. You can set LIBTYPE variable to value STATIC or SHARED to change this." )
+    set(LIBTYPE "SHARED")
+endif()

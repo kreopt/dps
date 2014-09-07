@@ -1,0 +1,13 @@
+if(("${TARGET_OS}" STREQUAL "LIN") OR ("${TARGET_OS}" STREQUAL "WIN"))
+    message( STATUS "Library will be built for ${TARGET_OS}" )
+else()
+	message( STATUS "Library will be built for linux. You can change this by setting TARGET_OS variable to value LIN or WIN" )
+	set(TARGET_OS LIN)
+endif()
+
+if("${TARGET_OS}" STREQUAL "LIN")
+    set( PLATFORM_NAME "linux" )
+else()
+    set( PLATFORM_NAME "windows" )
+endif()
+set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/${PLATFORM_NAME} )

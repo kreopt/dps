@@ -3,12 +3,8 @@
 #include <string>
 #include <unordered_map>
 #include <functional>
-#include <boost/functional/hash.hpp>
-#include <boost/variant.hpp>
-#include <boost/variant/detail/hash_variant.hpp>
 
 namespace dps {
-    using namespace std;
 
     enum class Protocol {
         TCP,
@@ -31,23 +27,21 @@ namespace dps {
         ObjectArray,
         Raw
     };
-    typedef boost::variant<int, double, string> variant_t;
-    typedef boost::hash<boost::variant<int, double, string>> variant_hasher;
 
     struct environment_info_t {
-        string      uid;
+        std::string      uid;
         Protocol    protocol;
-        string      address;
+        std::string      address;
     };
 
     struct node_info_t {
-        string      uid;
-        string      env_uid;
+        std::string      uid;
+        std::string      env_uid;
     };
 
     struct signal_t {
-        string      name;
-        unordered_map<string, void*>   body;
+        std::string      name;
+        std::unordered_map<std::string, void*>   body;
     };
 
     enum class IndexType {
@@ -61,7 +55,7 @@ namespace dps {
     typedef index_t   sig_index_t;
     typedef uint8_t   sig_param_index_t;
 
-    enum class Operation {
+    enum class Operation: uint8_t {
         LT,
         GT,
         LTE,
@@ -81,15 +75,15 @@ namespace dps {
         }
     };
     inline size_t sig_param_hash( const sig_param_t &param ){
-        return hash<int>()(static_cast<int>(param));
+        return std::hash<int>()(static_cast<int>(param));
     };
 
-    typedef const unordered_map<sig_param_t,variant_t,decltype(&sig_param_hash)>& sig_condition_t;
-    typedef unordered_map<string,SigParamType> sig_param_list_t;
+    typedef const std::unordered_map<sig_param_t,variant_t,decltype(&sig_param_hash)>& sig_condition_t;
+    typedef std::unordered_map<std::string,SigParamType> sig_param_list_t;
 
     struct condition_item_t{
         void*       value;
-        vector<const node_info_t*> match_nodes;
+        std::vector<const node_info_t*> match_nodes;
     };
 
     //typedef vector<condition_item_t> condition_t;

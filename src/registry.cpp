@@ -1,6 +1,5 @@
 #include <stdexcept>
 #include "registry.h"
-#include "iconfig.h"
 #include "pal.h"
 
 void dps::Registry::create_database()
@@ -51,7 +50,7 @@ void dps::Registry::create_table(const string& sql)
 dps::Registry::Registry()
 {
     string path_prefix = PAL::path_get_data_dir();
-    string db_path = path_prefix+"/" + dps::settings()->get_value("database","dps") + ".db";
+    string db_path = path_prefix+"/" + dps::settings()->get("database","dps") + ".db";
 
     this->db.open(db_path);
 

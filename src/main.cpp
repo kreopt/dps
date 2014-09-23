@@ -1,17 +1,9 @@
 #include <iostream>
-#include "isubscriptionmanager.h"
-#include "tablesubscriptionmanager.h"
-using namespace std;
-using namespace dps;
+#include "signal.hpp"
+
 int main()
 {
-    try{
-        ISubscriptionManager *sub_man = new TableSubscriptionManager();
-        delete sub_man;
-    } catch (const string& e) {
-        cout << e;
-        exit(-1);
-    }
+    dps::shared_signal sig();
 
     return 0;
 }

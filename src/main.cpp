@@ -3,7 +3,7 @@
 
 int main()
 {
-    dps::shared_signal sig();
+    dps::signal sig();
 
     return 0;
 }
